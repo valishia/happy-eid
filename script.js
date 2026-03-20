@@ -9,8 +9,6 @@ let startCell = null;
 let selectedCells = [];
 let direction = null;
 
-let currentPointer = { x: 0, y: 0 };
-
 const directions = [[0,1],[1,0],[0,-1],[-1,0],[1,1],[-1,-1],[1,-1],[-1,1]];
 
 const grid = document.getElementById('grid');
@@ -78,101 +76,61 @@ function renderGrid(){
 
 function resizeCanvas(){
     const rect = grid.getBoundingClientRect();
-
     canvas.width = rect.width;
     canvas.height = rect.height;
-
     canvas.style.width = rect.width + "px";
     canvas.style.height = rect.height + "px";
 }
 
 /* ================= POINTER EVENTS ================= */
-
-// START
-grid.addEventListener('pointerdown', (e) => {
-    if (!e.target.classList.contains('cell')) return;
+grid.addEventListener('pointerdown', e => {
+    if(!e.target.classList.contains('cell')) return;
 
     e.preventDefault();
-
     isDragging = true;
     startCell = e.target;
     selectedCells = [startCell];
     direction = null;
 
-    currentPointer.x = e.clientX;
-    currentPointer.y = e.clientY;
-
     grid.setPointerCapture(e.pointerId);
 });
 
-// MOVE
-grid.addEventListener('pointermove', (e) => {
-    if (!isDragging) return;
-
+grid.addEventListener('pointermove', e => {
+    if(!isDragging) return;
     e.preventDefault();
 
-    currentPointer.x = e.clientX;
-    currentPointer.y = e.clientY;
-
     const rect = grid.getBoundingClientRect();
-
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-
     const cellSize = rect.width / size;
 
-    const rawCol = x / cellSize;
-    const rawRow = y / cellSize;
+    let rawCol = x / cellSize;
+    let rawRow = y / cellSize;
 
     let col, row;
+    if(!direction){
+        col = Math.floor(rawCol);
+        row = Math.floor(rawRow);
+    } else {
+        const [dr, dc] = direction;
 
-if (!direction) {
-    // awal drag → bebas
-    col = Math.round(rawCol);
-    row = Math.round(rawRow);
-} else {
-    const [dr, dc] = direction;
-
-    if (dr === 0) {
-        // 🔥 HORIZONTAL → row fix
-        row = parseInt(startCell.dataset.row);
-        col = Math.round(rawCol);
-    } 
-    else if (dc === 0) {
-        // 🔥 VERTICAL → col fix
-        col = parseInt(startCell.dataset.col);
-        row = Math.round(rawRow);
-    } 
-    else {
-        // 🔥 DIAGONAL
-        col = Math.round(rawCol);
-        row = Math.round(rawRow);
-    }
-}
-
-    const cell = document.querySelector(
-        `[data-row='${row}'][data-col='${col}']`
-    );
-
-    if (cell) {
-        dragOver(cell);
+        if(dr === 0){ row = parseInt(startCell.dataset.row); col = Math.floor(rawCol); }
+        else if(dc === 0){ col = parseInt(startCell.dataset.col); row = Math.floor(rawRow); }
+        else{ col = Math.floor(rawCol); row = Math.floor(rawRow); }
     }
 
-    drawLine(startCell);
+    const cell = document.querySelector(`[data-row='${row}'][data-col='${col}']`);
+    if(cell) dragOver(cell);
 });
 
-// END
-grid.addEventListener('pointerup', (e) => {
-    if (!isDragging) return;
-
+grid.addEventListener('pointerup', e => {
+    if(!isDragging) return;
     isDragging = false;
     ctx.clearRect(0,0,canvas.width,canvas.height);
     checkWord();
-
     grid.releasePointerCapture(e.pointerId);
 });
 
-// CANCEL
 grid.addEventListener('pointercancel', () => {
     isDragging = false;
     ctx.clearRect(0,0,canvas.width,canvas.height);
@@ -182,73 +140,71 @@ grid.addEventListener('pointercancel', () => {
 function dragOver(cell){
     if(!isDragging) return;
 
-    const r1=parseInt(startCell.dataset.row);
-    const c1=parseInt(startCell.dataset.col);
-    const r2=parseInt(cell.dataset.row);
-    const c2=parseInt(cell.dataset.col);
+    const r1 = parseInt(startCell.dataset.row);
+    const c1 = parseInt(startCell.dataset.col);
+    const r2 = parseInt(cell.dataset.row);
+    const c2 = parseInt(cell.dataset.col);
 
-    let dr=r2-r1;
-    let dc=c2-c1;
+    let dr = r2 - r1;
+    let dc = c2 - c1;
 
-    let stepR=Math.sign(dr);
-    let stepC=Math.sign(dc);
+    let stepR = Math.sign(dr);
+    let stepC = Math.sign(dc);
 
-    if(!direction){
-        direction=[stepR,stepC];
-    }
+    if(!direction) direction = [stepR, stepC];
 
-    if(stepR!==direction[0]||stepC!==direction[1]) return;
+    if(stepR !== direction[0] && stepR !==0) return;
+    if(stepC !== direction[1] && stepC !==0) return;
 
-    selectedCells=[];
-
-    let len=Math.max(Math.abs(dr),Math.abs(dc));
+    selectedCells = [];
+    const len = Math.max(Math.abs(dr), Math.abs(dc));
 
     for(let i=0;i<=len;i++){
-        let r=r1+direction[0]*i;
-        let c=c1+direction[1]*i;
-        let el=document.querySelector(`[data-row='${r}'][data-col='${c}']`);
+        const r = r1 + direction[0]*i;
+        const c = c1 + direction[1]*i;
+        const el = document.querySelector(`[data-row='${r}'][data-col='${c}']`);
         if(el) selectedCells.push(el);
     }
+
+    if(selectedCells.length>0)
+        drawLine(selectedCells[0], selectedCells[selectedCells.length-1]);
 }
 
 /* ================= DRAW LINE ================= */
-function drawLine(start){
+function drawLine(start, end){
     ctx.clearRect(0,0,canvas.width,canvas.height);
+    if(!end) return;
 
     const gridRect = grid.getBoundingClientRect();
     const sRect = start.getBoundingClientRect();
+    const eRect = end.getBoundingClientRect();
 
-    const x1 = sRect.left - gridRect.left + sRect.width / 2;
-    const y1 = sRect.top - gridRect.top + sRect.height / 2;
-
-    const x2 = currentPointer.x - gridRect.left;
-    const y2 = currentPointer.y - gridRect.top;
+    const x1 = sRect.left - gridRect.left + sRect.width/2;
+    const y1 = sRect.top - gridRect.top + sRect.height/2;
+    const x2 = eRect.left - gridRect.left + eRect.width/2;
+    const y2 = eRect.top - gridRect.top + eRect.height/2;
 
     ctx.strokeStyle = '#ff8c42';
     ctx.lineWidth = 8;
     ctx.lineCap = 'round';
 
     ctx.beginPath();
-    ctx.moveTo(x1, y1);
-    ctx.lineTo(x2, y2);
+    ctx.moveTo(x1,y1);
+    ctx.lineTo(x2,y2);
     ctx.stroke();
 }
 
 /* ================= CHECK ================= */
 function checkWord(){
-    let word=selectedCells.map(c=>c.textContent).join('');
-    let reversed=word.split('').reverse().join('');
+    let word = selectedCells.map(c=>c.textContent).join('');
+    let reversed = word.split('').reverse().join('');
 
-    if(words.includes(word)||words.includes(reversed)){
+    if(words.includes(word) || words.includes(reversed)){
         selectedCells.forEach(c=>c.classList.add('found'));
         foundWords.push(word);
-
-        if(foundWords.length===words.length){
-            showLetterPage();
-        }
+        if(foundWords.length === words.length) showLetterPage();
     }
-
-    selectedCells=[];
+    selectedCells = [];
 }
 
 /* ================= LETTER ================= */
@@ -274,7 +230,6 @@ Sincerely, Gya.`;
 function startTyping(){
     let i=0;
     const el=document.getElementById('typing');
-
     function type(){
         if(i<message.length){
             el.innerHTML+=message.charAt(i);
@@ -282,7 +237,6 @@ function startTyping(){
             setTimeout(type,40);
         }
     }
-
     type();
 }
 
