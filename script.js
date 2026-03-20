@@ -86,6 +86,8 @@ function resizeCanvas(){
 grid.addEventListener('pointerdown', (e) => {
     if (!e.target.classList.contains('cell')) return;
 
+    e.preventDefault()
+
     isDragging = true;
     startCell = e.target;
     selectedCells = [startCell];
@@ -98,6 +100,8 @@ grid.addEventListener('pointerdown', (e) => {
 // MOVE
 grid.addEventListener('pointermove', (e) => {
     if (!isDragging) return;
+
+    e.preventDefault()
 
     const el = document.elementFromPoint(e.clientX, e.clientY);
     if (el && el.classList.contains('cell')) {
