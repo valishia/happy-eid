@@ -1,11 +1,15 @@
 const size = 8;
 const words = ['EID','MAAF','FITRI'];
+
 let gridData = Array.from({length:size},()=>Array(size).fill(''));
 let foundWords = [];
+
 let isDragging = false;
 let startCell = null;
 let selectedCells = [];
 let direction = null;
+
+let currentPointer = { x: 0, y: 0 };
 
 const directions = [[0,1],[1,0],[0,-1],[-1,0],[1,1],[-1,-1],[1,-1],[-1,1]];
 
@@ -57,6 +61,7 @@ function fillRandom(){
 /* ================= RENDER ================= */
 function renderGrid(){
     grid.innerHTML='';
+
     gridData.forEach((row,r)=>{
         row.forEach((letter,c)=>{
             const div=document.createElement('div');
@@ -73,6 +78,7 @@ function renderGrid(){
 
 function resizeCanvas(){
     const rect = grid.getBoundingClientRect();
+
     canvas.width = rect.width;
     canvas.height = rect.height;
 
@@ -80,20 +86,22 @@ function resizeCanvas(){
     canvas.style.height = rect.height + "px";
 }
 
-/* ================= POINTER EVENTS (🔥 FIX) ================= */
+/* ================= POINTER EVENTS ================= */
 
 // START
 grid.addEventListener('pointerdown', (e) => {
     if (!e.target.classList.contains('cell')) return;
 
-    e.preventDefault()
+    e.preventDefault();
 
     isDragging = true;
     startCell = e.target;
     selectedCells = [startCell];
     direction = null;
 
-    // 🔥 WAJIB (INI YANG KURANG)
+    currentPointer.x = e.clientX;
+    currentPointer.y = e.clientY;
+
     grid.setPointerCapture(e.pointerId);
 });
 
@@ -102,6 +110,9 @@ grid.addEventListener('pointermove', (e) => {
     if (!isDragging) return;
 
     e.preventDefault();
+
+    currentPointer.x = e.clientX;
+    currentPointer.y = e.clientY;
 
     const rect = grid.getBoundingClientRect();
 
@@ -120,6 +131,8 @@ grid.addEventListener('pointermove', (e) => {
     if (cell) {
         dragOver(cell);
     }
+
+    drawLine(startCell);
 });
 
 // END
@@ -130,11 +143,10 @@ grid.addEventListener('pointerup', (e) => {
     ctx.clearRect(0,0,canvas.width,canvas.height);
     checkWord();
 
-    // 🔥 RELEASE (WAJIB)
     grid.releasePointerCapture(e.pointerId);
 });
 
-// CANCEL (mobile safety)
+// CANCEL
 grid.addEventListener('pointercancel', () => {
     isDragging = false;
     ctx.clearRect(0,0,canvas.width,canvas.height);
@@ -171,30 +183,28 @@ function dragOver(cell){
         let el=document.querySelector(`[data-row='${r}'][data-col='${c}']`);
         if(el) selectedCells.push(el);
     }
-
-    drawLine(startCell, selectedCells[selectedCells.length-1]);
 }
 
 /* ================= DRAW LINE ================= */
-function drawLine(start,end){
+function drawLine(start){
     ctx.clearRect(0,0,canvas.width,canvas.height);
 
-    const gridRect=grid.getBoundingClientRect();
-    const sRect=start.getBoundingClientRect();
-    const eRect=end.getBoundingClientRect();
+    const gridRect = grid.getBoundingClientRect();
+    const sRect = start.getBoundingClientRect();
 
-    const x1=sRect.left-gridRect.left+sRect.width/2;
-    const y1=sRect.top-gridRect.top+sRect.height/2;
-    const x2=eRect.left-gridRect.left+eRect.width/2;
-    const y2=eRect.top-gridRect.top+eRect.height/2;
+    const x1 = sRect.left - gridRect.left + sRect.width / 2;
+    const y1 = sRect.top - gridRect.top + sRect.height / 2;
 
-    ctx.strokeStyle='#ff8c42';
-    ctx.lineWidth=8;
-    ctx.lineCap='round';
+    const x2 = currentPointer.x - gridRect.left;
+    const y2 = currentPointer.y - gridRect.top;
+
+    ctx.strokeStyle = '#ff8c42';
+    ctx.lineWidth = 8;
+    ctx.lineCap = 'round';
 
     ctx.beginPath();
-    ctx.moveTo(x1,y1);
-    ctx.lineTo(x2,y2);
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
     ctx.stroke();
 }
 
