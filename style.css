@@ -1,3 +1,4 @@
+/* ===== BASE ===== */
 body {
     font-family: Arial, sans-serif;
     display: flex;
@@ -6,24 +7,33 @@ body {
     justify-content: center;
     height: 100vh;
     background: #e6f3ee;
-    touch-action: none;
 }
 
-.grid-wrapper { position: relative; }
+/* ===== GRID WRAPPER ===== */
+.grid-wrapper {
+    position: relative;
+    touch-action: none; /* 🔥 FIX MOBILE DRAG */
+}
 
+/* ===== GRID ===== */
 .grid {
     display: grid;
     grid-template-columns: repeat(8, 42px);
     gap: 6px;
+    position: relative;
+    z-index: 2; /* di atas canvas */
 }
 
+/* ===== CANVAS (GARIS) ===== */
 canvas {
     position: absolute;
     top: 0;
     left: 0;
-    pointer-events: none;
+    pointer-events: none; /* 🔥 BIAR GA BLOCK TOUCH */
+    z-index: 1;
 }
 
+/* ===== CELL ===== */
 .cell {
     width: 42px;
     height: 42px;
@@ -36,15 +46,59 @@ canvas {
     cursor: pointer;
     font-weight: bold;
     color: #2f5d50;
+
+    /* 🔥 FIX MOBILE */
+    user-select: none;
+    -webkit-user-select: none;
 }
 
-.cell:hover { background: #bdf0d8; }
+/* hover (desktop aja) */
+.cell:hover {
+    background: #bdf0d8;
+}
 
+/* kata ketemu */
 .found {
     background: #ff3f8e;
     color: white;
 }
 
+/* ===== TITLE ===== */
+h1 {
+    text-align: center;
+    color: black;
+}
+
+/* ===== WORD LIST ===== */
+.word-list {
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.label {
+    color: black;
+    font-weight: bold;
+}
+
+/* chips */
+.chips {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.chip {
+    padding: 8px 16px;
+    border-radius: 999px;
+    border: 2px solid #ff8c42;
+    color: #ff8c42;
+    font-weight: bold;
+}
+
+/* ===== LETTER PAGE ===== */
 .letter-page {
     text-align: center;
     max-width: 420px;
@@ -54,24 +108,47 @@ canvas {
     border: 2px solid #ff8c42;
 }
 
-h1 { text-align: center; color: black; }
-
-.word-list {
-    margin-top: 20px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+/* typing effect */
+#typing {
+    white-space: pre-line;
 }
 
-.label { color: black; font-weight: bold; }
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+    .grid {
+        grid-template-columns: repeat(8, 34px);
+        gap: 5px;
+    }
 
-.chips { display: flex; gap: 10px; }
+    .cell {
+        width: 34px;
+        height: 34px;
+        font-size: 14px;
+    }
 
-.chip {
-    padding: 8px 16px;
-    border-radius: 999px;
-    border: 2px solid #ff8c42;
-    color: #ff8c42;
+    h1 {
+        font-size: 20px;
+    }
+
+    .chip {
+        padding: 6px 12px;
+        font-size: 12px;
+    }
 }
 
-#typing { white-space: pre-line; }
+@media (max-width: 480px) {
+    .grid {
+        grid-template-columns: repeat(8, 28px);
+        gap: 4px;
+    }
+
+    .cell {
+        width: 28px;
+        height: 28px;
+        font-size: 12px;
+    }
+
+    h1 {
+        font-size: 18px;
+    }
+}
