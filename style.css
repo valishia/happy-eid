@@ -6,6 +6,7 @@ body {
     justify-content: center;
     height: 100vh;
     background: #e6f3ee;
+    touch-action: none;
 }
 
 .grid-wrapper { position: relative; }
