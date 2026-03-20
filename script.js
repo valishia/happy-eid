@@ -93,10 +93,11 @@ function getCellFromTouch(touch){
 // TOUCH MOVE GLOBAL
 document.addEventListener('touchmove',(e)=>{
     if(!isDragging) return;
+    e.preventDefault();
     const touch = e.touches[0];
     const cell = getCellFromTouch(touch);
     if(cell){ dragOver(cell); }
-});
+},{ passive: false });
 
 // TOUCH END GLOBAL
 document.addEventListener('touchend',()=>{
@@ -197,10 +198,13 @@ function showLetterPage(){
     startTyping();
 }
 
-const message=`May this special day bring happiness and peace to your heart.
+const message=`Selamat Hari Raya Idul Fitri 🌙✨
+
 Mohon maaf lahir dan batin yaa 🤍
 Kalau selama ini ada kata atau sikap yang kurang berkenan, aku minta maaf sebesar-besarnya 🥺
+
 Terima kasih juga untuk semua kenangan, tawa, dan kebersamaan yang udah kita lewatin bareng 💛
+
 Semoga pertemanan kita tetap hangat, penuh cerita, dan terus berlanjut ke depannya 🤍✨
 
 Sincerely, Gya.`;
