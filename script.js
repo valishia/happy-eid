@@ -121,8 +121,34 @@ grid.addEventListener('pointermove', (e) => {
 
     const cellSize = rect.width / size;
 
-    const col = Math.round(x / cellSize);
-    const row = Math.round(y / cellSize);
+    const rawCol = x / cellSize;
+    const rawRow = y / cellSize;
+
+    let col, row;
+
+if (!direction) {
+    // awal drag → bebas
+    col = Math.round(rawCol);
+    row = Math.round(rawRow);
+} else {
+    const [dr, dc] = direction;
+
+    if (dr === 0) {
+        // 🔥 HORIZONTAL → row fix
+        row = parseInt(startCell.dataset.row);
+        col = Math.round(rawCol);
+    } 
+    else if (dc === 0) {
+        // 🔥 VERTICAL → col fix
+        col = parseInt(startCell.dataset.col);
+        row = Math.round(rawRow);
+    } 
+    else {
+        // 🔥 DIAGONAL
+        col = Math.round(rawCol);
+        row = Math.round(rawRow);
+    }
+}
 
     const cell = document.querySelector(
         `[data-row='${row}'][data-col='${col}']`
