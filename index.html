@@ -24,15 +24,40 @@ body {
     overscroll-behavior: none;
 }
 
-/* ===== TITLE ===== */
 h1 {
     font-family: 'Fredoka One', cursive;
     font-size: 28px;
     color: #e63889;
     text-align: center;
-    margin-bottom: 18px;
+    margin-bottom: 12px;
     letter-spacing: 1px;
 }
+
+/* ===== MUSIC BUTTON ===== */
+#musicBtn {
+    position: fixed;
+    top: 14px;
+    right: 14px;
+    z-index: 999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: white;
+    border: 2px solid #ff8c42;
+    border-radius: 50%;
+    color: #ff8c42;
+    font-size: 16px;
+    cursor: pointer;
+    box-shadow: 0 2px 10px rgba(255,140,66,0.25);
+    transition: all 0.2s;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    padding: 0;
+}
+#musicBtn:active { transform: scale(0.9); }
+#musicBtn.playing { background: #ff8c42; color: white; box-shadow: 0 2px 14px rgba(255,140,66,0.45); }
 
 /* ===== WRAPPER ===== */
 .grid-wrapper {
@@ -52,11 +77,9 @@ h1 {
     touch-action: none;
 }
 
-/* ===== CANVAS ===== */
 canvas {
     position: absolute;
-    top: 0;
-    left: 0;
+    top: 0; left: 0;
     pointer-events: none;
     z-index: 10;
 }
@@ -80,19 +103,9 @@ canvas {
     touch-action: none;
     transition: background 0.15s;
 }
-
-.cell:hover { background: #ffe0ef; }
-
-.cell.selected {
-    background: #ffc0db;
-    color: #c0006a;
-}
-
-.cell.found {
-    background: #ff3f8e;
-    color: white;
-    border-color: #c0006a;
-}
+.cell:hover    { background: #ffe0ef; }
+.cell.selected { background: #ffc0db; color: #c0006a; }
+.cell.found    { background: #ff3f8e; color: white; border-color: #c0006a; }
 
 /* ===== WORD LIST ===== */
 .word-list {
@@ -102,32 +115,29 @@ canvas {
     align-items: center;
     gap: 10px;
 }
-
 .label {
     color: #888;
-    font-size: 13px;
+    font-size: 11px;
     font-weight: 600;
     letter-spacing: 0.5px;
     text-transform: uppercase;
 }
-
 .chips {
     display: flex;
     gap: 10px;
     flex-wrap: wrap;
     justify-content: center;
 }
-
 .chip {
     padding: 6px 16px;
     border-radius: 999px;
-    border: 2px solid #ff8c42;
+    border: 1.5px solid #ff8c42;
+    opacity: 0.75;
     color: #ff8c42;
     font-weight: 700;
     font-size: 14px;
     transition: all 0.2s;
 }
-
 .chip.found-chip {
     background: #ff8c42;
     color: white;
@@ -142,18 +152,17 @@ canvas {
     background: white;
     padding: 36px 30px;
     border-radius: 24px;
-    border: 2px solid #ff8c42;
-    box-shadow: 0 8px 32px rgba(255, 140, 66, 0.15);
+    border: 1.5px solid #ff8c42;
+    opacity: 0.75;
+    box-shadow: 0 8px 32px rgba(255,140,66,0.15);
     animation: fadeIn 0.6s ease;
 }
-
 .letter-page h2 {
     font-family: 'Fredoka One', cursive;
     font-size: 26px;
     color: #e63889;
     margin-bottom: 20px;
 }
-
 #typing {
     white-space: pre-line;
     line-height: 1.8;
@@ -161,7 +170,6 @@ canvas {
     font-size: 15px;
     text-align: left;
 }
-
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(16px); }
     to   { opacity: 1; transform: translateY(0); }
@@ -171,20 +179,20 @@ canvas {
 @media (max-width: 768px) {
     .grid { grid-template-columns: repeat(8, 34px); gap: 5px; }
     .cell { width: 34px; height: 34px; font-size: 13px; }
-    h1 { font-size: 22px; }
+    h1    { font-size: 22px; }
 }
-
 @media (max-width: 480px) {
     .grid { grid-template-columns: repeat(8, 28px); gap: 4px; }
     .cell { width: 28px; height: 28px; font-size: 11px; }
-    h1 { font-size: 18px; }
+    h1    { font-size: 18px; }
 }
 </style>
-<audio id="bgm" loop>
-    <source src="musicc.mp3" type="audio/mpeg">
-</audio>
 </head>
 <body>
+
+<audio id="bgm" loop preload="auto">
+    <source src="musicc.mp3" type="audio/mpeg">
+</audio>
 
 <div id="game">
     <h1>Eid Word Search 🌙</h1>
@@ -202,7 +210,10 @@ canvas {
             <span class="chip" data-word="FITRI">FITRI</span>
         </div>
     </div>
+
 </div>
+
+<button id="musicBtn" title="Play/Pause Music">🎵</button>
 
 <div id="letter" style="display:none;">
     <div class="letter-page">
@@ -212,6 +223,42 @@ canvas {
 </div>
 
 <script>
+/* ============================================================
+   MUSIC — button tap is a direct user gesture, works on mobile
+============================================================ */
+const bgm        = document.getElementById('bgm');
+const musicBtn = document.getElementById('musicBtn');
+bgm.volume = 0.5;
+let isPlaying = false;
+
+function toggleMusic() {
+    if (!isPlaying) {
+        bgm.play().then(() => {
+            isPlaying = true;
+            musicBtn.classList.add('playing');
+            musicBtn.textContent = '🔇';
+        }).catch(err => console.warn('Audio blocked:', err));
+    } else {
+        bgm.pause();
+        isPlaying = false;
+        musicBtn.classList.remove('playing');
+        musicBtn.textContent = '🎵';
+    }
+}
+
+// Use touchend for snappy mobile response, fallback to click on desktop
+musicBtn.addEventListener('touchend', e => {
+    e.preventDefault(); // prevent ghost click
+    toggleMusic();
+});
+musicBtn.addEventListener('click', e => {
+    // only fire on desktop (touchend already handled above)
+    if (e.pointerType !== 'touch') toggleMusic();
+});
+
+/* ============================================================
+   GAME
+============================================================ */
 const SIZE    = 8;
 const WORDS   = ['EID', 'MAAF', 'FITRI'];
 const DIRS    = [[0,1],[1,0],[0,-1],[-1,0],[1,1],[-1,-1],[1,-1],[-1,1]];
@@ -219,20 +266,16 @@ const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
 let gridData    = Array.from({length: SIZE}, () => Array(SIZE).fill(''));
 let foundWords  = new Set();
-
-let isDragging    = false;
-let startCell     = null;
-let direction     = null;
+let isDragging  = false;
+let startCell   = null;
+let direction   = null;
 let selectedCells = [];
-let pointerPos    = {x: 0, y: 0};
+let pointerPos  = {x: 0, y: 0};
 
 const gridEl = document.getElementById('grid');
 const canvas = document.getElementById('lineCanvas');
 const ctx    = canvas.getContext('2d');
 
-/* ============================================================
-   WORD PLACEMENT
-============================================================ */
 function placeWords() {
     WORDS.forEach(word => {
         let placed = false, tries = 0;
@@ -262,9 +305,6 @@ function fillRandom() {
                 gridData[r][c] = LETTERS[Math.floor(Math.random() * LETTERS.length)];
 }
 
-/* ============================================================
-   RENDER
-============================================================ */
 function renderGrid() {
     gridEl.innerHTML = '';
     gridData.forEach((row, r) => {
@@ -288,21 +328,10 @@ function syncCanvas() {
     canvas.style.height = rect.height + 'px';
 }
 
-/* ============================================================
-   CELL METRICS — reads real DOM size, includes gap
-============================================================ */
 function getCellStep() {
-    const firstCell = gridEl.querySelector('.cell');
-    if (!firstCell) return 48;
-    const gridRect = gridEl.getBoundingClientRect();
-    const cRect    = firstCell.getBoundingClientRect();
-    // step = cellSize + gap = total / SIZE
-    return gridRect.width / SIZE;
+    return gridEl.getBoundingClientRect().width / SIZE;
 }
 
-/* ============================================================
-   HIT TEST  clientX/Y → {row, col}
-============================================================ */
 function clientToCell(clientX, clientY) {
     const rect = gridEl.getBoundingClientRect();
     const step = getCellStep();
@@ -312,36 +341,27 @@ function clientToCell(clientX, clientY) {
     return {row, col};
 }
 
-/* ============================================================
-   PROJECT onto locked direction
-============================================================ */
+function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
 function projectToDir(r1, c1, rawR, rawC, dir) {
     const [dr, dc] = dir;
-    if (dr === 0) return {row: r1,                   col: clamp(rawC, 0, SIZE-1)};
+    if (dr === 0) return {row: r1,                    col: clamp(rawC, 0, SIZE-1)};
     if (dc === 0) return {row: clamp(rawR, 0, SIZE-1), col: c1};
     const t = Math.max(0, Math.round((rawR - r1) * dr + (rawC - c1) * dc));
     return {row: clamp(r1 + dr * t, 0, SIZE-1), col: clamp(c1 + dc * t, 0, SIZE-1)};
 }
 
-function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
-
-/* ============================================================
-   UPDATE SELECTION
-============================================================ */
 function updateSelection(clientX, clientY) {
     const hit = clientToCell(clientX, clientY);
     if (!hit || !startCell) return;
-
     const r1 = +startCell.dataset.row;
     const c1 = +startCell.dataset.col;
     const {row: rawR, col: rawC} = hit;
-
     if (!direction) {
         const dr = rawR - r1, dc = rawC - c1;
         if (dr === 0 && dc === 0) { applySelection([startCell]); return; }
         direction = [Math.sign(dr), Math.sign(dc)];
     }
-
     const {row: endR, col: endC} = projectToDir(r1, c1, rawR, rawC, direction);
     const steps = Math.max(Math.abs(endR - r1), Math.abs(endC - c1));
     const cells = [];
@@ -366,9 +386,6 @@ function clearSelection() {
     direction = null;
 }
 
-/* ============================================================
-   DRAW LINE
-============================================================ */
 function drawDragLine() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     if (!startCell) return;
@@ -386,12 +403,8 @@ function drawDragLine() {
     ctx.restore();
 }
 
-/* ============================================================
-   UNIFIED INPUT — handles both Pointer API and Touch fallback
-   Mobile Safari sometimes fires touch events instead of pointer
-============================================================ */
 function onDragStart(clientX, clientY, target, pointerId) {
-    if (!target.classList.contains('cell')) return;
+    if (!target || !target.classList.contains('cell')) return;
     isDragging    = true;
     startCell     = target;
     direction     = null;
@@ -426,7 +439,7 @@ function onDragCancel() {
     clearSelection();
 }
 
-// ── Pointer Events (desktop + modern mobile) ──
+// Pointer Events (desktop + modern mobile)
 gridEl.addEventListener('pointerdown', e => {
     e.preventDefault();
     onDragStart(e.clientX, e.clientY, e.target, e.pointerId);
@@ -440,15 +453,14 @@ gridEl.addEventListener('pointermove', e => {
 gridEl.addEventListener('pointerup',     e => onDragEnd(e.pointerId));
 gridEl.addEventListener('pointercancel', () => onDragCancel());
 
-// ── Touch Events fallback (iOS Safari edge cases) ──
-// Only bind if pointer events aren't firing properly
+// Touch fallback (iOS Safari edge cases)
 let pointerFired = false;
 gridEl.addEventListener('pointerdown', () => { pointerFired = true; }, {once: true});
 
 gridEl.addEventListener('touchstart', e => {
-    if (pointerFired) return;          // pointer API working, skip
+    if (pointerFired) return;
     e.preventDefault();
-    const t = e.changedTouches[0];
+    const t  = e.changedTouches[0];
     const el = document.elementFromPoint(t.clientX, t.clientY);
     onDragStart(t.clientX, t.clientY, el, undefined);
 }, {passive: false});
@@ -460,29 +472,17 @@ gridEl.addEventListener('touchmove', e => {
     onDragMove(t.clientX, t.clientY);
 }, {passive: false});
 
-gridEl.addEventListener('touchend', e => {
-    if (pointerFired) return;
-    onDragEnd(undefined);
-}, {passive: false});
+gridEl.addEventListener('touchend',    e => { if (!pointerFired) onDragEnd(undefined); },  {passive: false});
+gridEl.addEventListener('touchcancel', () => { if (!pointerFired) onDragCancel(); });
 
-gridEl.addEventListener('touchcancel', () => {
-    if (pointerFired) return;
-    onDragCancel();
-});
-
-// Prevent page scroll while dragging anywhere on document
 document.addEventListener('touchmove', e => {
     if (isDragging) e.preventDefault();
 }, {passive: false});
 
-/* ============================================================
-   CHECK WORD
-============================================================ */
 function checkWord() {
     const word    = selectedCells.map(c => c.textContent).join('');
     const rev     = word.split('').reverse().join('');
     const matched = WORDS.find(w => w === word || w === rev);
-
     if (matched && !foundWords.has(matched)) {
         foundWords.add(matched);
         selectedCells.forEach(c => { c.classList.remove('selected'); c.classList.add('found'); });
@@ -496,9 +496,6 @@ function checkWord() {
     direction = null;
 }
 
-/* ============================================================
-   LETTER PAGE
-============================================================ */
 function showLetterPage() {
     document.getElementById('game').style.display   = 'none';
     document.getElementById('letter').style.display = 'block';
@@ -524,25 +521,13 @@ function startTyping() {
     })();
 }
 
-/* ============================================================
-   INIT
-============================================================ */
 placeWords();
 fillRandom();
 renderGrid();
-window.addEventListener('resize', () => { syncCanvas(); ctx.clearRect(0,0,canvas.width,canvas.height); });
-
-// Play BGM on first user interaction (browser policy requires this)
-const bgm = document.getElementById('bgm');
-bgm.volume = 0.5;
-
-function startBGM() {
-    bgm.play().catch(() => {});
-    document.removeEventListener('pointerdown', startBGM);
-    document.removeEventListener('touchstart', startBGM);
-}
-document.addEventListener('pointerdown', startBGM);
-document.addEventListener('touchstart', startBGM);
+window.addEventListener('resize', () => {
+    syncCanvas();
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+});
 </script>
 </body>
 </html>
