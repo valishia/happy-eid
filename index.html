@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Word Search Puzzle</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="game">
+    <h1>Eid Word Search 🌙</h1>
+
+    <div class="grid-wrapper">
+        <canvas id="lineCanvas"></canvas>
+        <div class="grid" id="grid"></div>
+    </div>
+
+    <div class="word-list">
+        <span class="label">Temukan kata:</span>
+        <div class="chips">
+            <span class="chip">EID</span>
+            <span class="chip">MAAF</span>
+            <span class="chip">FITRI</span>
+        </div>
+    </div>
+</div>
+
+<div id="letter" style="display:none;">
+    <div class="letter-page">
+        <h2>Happy Eid 🌙!</h2>
+        <p id="typing"></p>
+    </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
