@@ -9,10 +9,10 @@ body {
     background: #e6f3ee;
 }
 
-/* ===== GRID WRAPPER ===== */
+/* ===== WRAPPER ===== */
 .grid-wrapper {
     position: relative;
-    touch-action: none; /* 🔥 FIX MOBILE DRAG */
+    touch-action: manipulation; /* 🔥 FIX MOBILE */
 }
 
 /* ===== GRID ===== */
@@ -21,7 +21,7 @@ body {
     grid-template-columns: repeat(8, 42px);
     gap: 6px;
     position: relative;
-    z-index: 2; /* di atas canvas */
+    z-index: 1; /* di bawah canvas */
 }
 
 /* ===== CANVAS (GARIS) ===== */
@@ -29,8 +29,8 @@ canvas {
     position: absolute;
     top: 0;
     left: 0;
-    pointer-events: none; /* 🔥 BIAR GA BLOCK TOUCH */
-    z-index: 1;
+    pointer-events: none; /* 🔥 biar gak block touch */
+    z-index: 3; /* 🔥 di atas grid */
 }
 
 /* ===== CELL ===== */
@@ -50,14 +50,15 @@ canvas {
     /* 🔥 FIX MOBILE */
     user-select: none;
     -webkit-user-select: none;
+    touch-action: none;
 }
 
-/* hover (desktop aja) */
+/* hover (desktop) */
 .cell:hover {
     background: #bdf0d8;
 }
 
-/* kata ketemu */
+/* found word */
 .found {
     background: #ff3f8e;
     color: white;
@@ -82,7 +83,6 @@ h1 {
     font-weight: bold;
 }
 
-/* chips */
 .chips {
     display: flex;
     gap: 10px;
