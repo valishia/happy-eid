@@ -22,6 +22,7 @@ body {
     gap: 6px;
     position: relative;
     z-index: 1; /* di bawah canvas */
+    touch-action: none;
 }
 
 /* ===== CANVAS (GARIS) ===== */

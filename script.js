@@ -90,6 +90,9 @@ grid.addEventListener('pointerdown', (e) => {
     startCell = e.target;
     selectedCells = [startCell];
     direction = null;
+
+    // 🔥 WAJIB (INI YANG KURANG)
+    grid.setPointerCapture(e.pointerId);
 });
 
 // MOVE
@@ -103,12 +106,21 @@ grid.addEventListener('pointermove', (e) => {
 });
 
 // END
-document.addEventListener('pointerup', () => {
+grid.addEventListener('pointerup', (e) => {
     if (!isDragging) return;
 
     isDragging = false;
     ctx.clearRect(0,0,canvas.width,canvas.height);
     checkWord();
+
+    // 🔥 RELEASE (WAJIB)
+    grid.releasePointerCapture(e.pointerId);
+});
+
+// CANCEL (mobile safety)
+grid.addEventListener('pointercancel', () => {
+    isDragging = false;
+    ctx.clearRect(0,0,canvas.width,canvas.height);
 });
 
 /* ================= DRAG LOGIC ================= */
