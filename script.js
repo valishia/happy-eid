@@ -63,20 +63,24 @@ function renderGrid(){
             div.dataset.row=r;
             div.dataset.col=c;
 
-            // mouse
+            // MOUSE
             div.addEventListener('mousedown',()=>startDrag(div));
             div.addEventListener('mouseover',()=>dragOver(div));
 
-            // touch
+            // TOUCH START
             div.addEventListener('touchstart',(e)=>{
                 e.preventDefault();
                 startDrag(div);
-            });
+            }, { passive: false });
 
             grid.appendChild(div);
         });
     });
 
+    resizeCanvas();
+}
+
+function resizeCanvas(){
     const rect=grid.getBoundingClientRect();
     canvas.width=rect.width;
     canvas.height=rect.height;
@@ -90,23 +94,35 @@ function getCellFromTouch(touch){
     return null;
 }
 
-// TOUCH MOVE GLOBAL
+// ===== TOUCH MOVE (GLOBAL FIX) =====
 document.addEventListener('touchmove',(e)=>{
     if(!isDragging) return;
     e.preventDefault();
+
     const touch = e.touches[0];
     const cell = getCellFromTouch(touch);
-    if(cell){ dragOver(cell); }
-},{ passive: false });
 
-// TOUCH END GLOBAL
+    if(cell){
+        dragOver(cell);
+    }
+}, { passive: false });
+
+// ===== TOUCH END =====
 document.addEventListener('touchend',()=>{
     if(!isDragging) return;
+
     isDragging=false;
     ctx.clearRect(0,0,canvas.width,canvas.height);
     checkWord();
 });
 
+// ===== TOUCH CANCEL (ANTI BUG) =====
+document.addEventListener('touchcancel',()=>{
+    isDragging=false;
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+});
+
+// ===== START DRAG =====
 function startDrag(cell){
     isDragging=true;
     startCell=cell;
@@ -114,6 +130,7 @@ function startDrag(cell){
     direction=null;
 }
 
+// ===== DRAG LOGIC =====
 function dragOver(cell){
     if(!isDragging) return;
 
@@ -128,7 +145,9 @@ function dragOver(cell){
     let stepR=Math.sign(dr);
     let stepC=Math.sign(dc);
 
-    if(!direction){ direction=[stepR,stepC]; }
+    if(!direction){
+        direction=[stepR,stepC];
+    }
 
     if(stepR!==direction[0]||stepC!==direction[1]) return;
 
@@ -146,14 +165,16 @@ function dragOver(cell){
     drawLine(startCell, selectedCells[selectedCells.length-1]);
 }
 
-// MOUSE END
+// ===== MOUSE END =====
 document.addEventListener('mouseup',()=>{
     if(!isDragging) return;
+
     isDragging=false;
     ctx.clearRect(0,0,canvas.width,canvas.height);
     checkWord();
 });
 
+// ===== DRAW LINE =====
 function drawLine(start,end){
     ctx.clearRect(0,0,canvas.width,canvas.height);
 
@@ -176,6 +197,7 @@ function drawLine(start,end){
     ctx.stroke();
 }
 
+// ===== CHECK WORD =====
 function checkWord(){
     let word=selectedCells.map(c=>c.textContent).join('');
     let reversed=word.split('').reverse().join('');
@@ -192,12 +214,14 @@ function checkWord(){
     selectedCells=[];
 }
 
+// ===== SHOW LETTER =====
 function showLetterPage(){
     document.getElementById('game').style.display='none';
     document.getElementById('letter').style.display='block';
     startTyping();
 }
 
+// ===== MESSAGE =====
 const message=`Selamat Hari Raya Idul Fitri 🌙✨
 
 Mohon maaf lahir dan batin yaa 🤍
@@ -209,6 +233,7 @@ Semoga pertemanan kita tetap hangat, penuh cerita, dan terus berlanjut ke depann
 
 Sincerely, Gya.`;
 
+// ===== TYPING EFFECT =====
 function startTyping(){
     let i=0;
     const el=document.getElementById('typing');
@@ -224,6 +249,7 @@ function startTyping(){
     type();
 }
 
+// INIT
 placeWords();
 fillRandom();
 renderGrid();
