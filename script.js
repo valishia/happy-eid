@@ -25,7 +25,7 @@ function placeWords(){
             for(let i=0;i<word.length;i++){
                 let r=row+dir[0]*i;
                 let c=col+dir[1]*i;
-                if(r<0||c<0||r>=size||c>=size||gridData[r][c]!=""){
+                if(r<0||c<0||r>=size||c>=size||gridData[r][c]!==""){
                     canPlace=false; break;
                 }
             }
@@ -63,8 +63,15 @@ function renderGrid(){
             div.dataset.row=r;
             div.dataset.col=c;
 
+            // mouse
             div.addEventListener('mousedown',()=>startDrag(div));
             div.addEventListener('mouseover',()=>dragOver(div));
+
+            // touch
+            div.addEventListener('touchstart',(e)=>{
+                e.preventDefault();
+                startDrag(div);
+            });
 
             grid.appendChild(div);
         });
@@ -74,6 +81,30 @@ function renderGrid(){
     canvas.width=rect.width;
     canvas.height=rect.height;
 }
+
+function getCellFromTouch(touch){
+    const element = document.elementFromPoint(touch.clientX, touch.clientY);
+    if(element && element.classList.contains('cell')){
+        return element;
+    }
+    return null;
+}
+
+// TOUCH MOVE GLOBAL
+document.addEventListener('touchmove',(e)=>{
+    if(!isDragging) return;
+    const touch = e.touches[0];
+    const cell = getCellFromTouch(touch);
+    if(cell){ dragOver(cell); }
+});
+
+// TOUCH END GLOBAL
+document.addEventListener('touchend',()=>{
+    if(!isDragging) return;
+    isDragging=false;
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    checkWord();
+});
 
 function startDrag(cell){
     isDragging=true;
@@ -114,6 +145,7 @@ function dragOver(cell){
     drawLine(startCell, selectedCells[selectedCells.length-1]);
 }
 
+// MOUSE END
 document.addEventListener('mouseup',()=>{
     if(!isDragging) return;
     isDragging=false;
