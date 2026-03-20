@@ -101,11 +101,24 @@ grid.addEventListener('pointerdown', (e) => {
 grid.addEventListener('pointermove', (e) => {
     if (!isDragging) return;
 
-    e.preventDefault()
+    e.preventDefault();
 
-    const el = document.elementFromPoint(e.clientX, e.clientY);
-    if (el && el.classList.contains('cell')) {
-        dragOver(el);
+    const rect = grid.getBoundingClientRect();
+
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    const cellSize = rect.width / size;
+
+    const col = Math.round(x / cellSize);
+    const row = Math.round(y / cellSize);
+
+    const cell = document.querySelector(
+        `[data-row='${row}'][data-col='${col}']`
+    );
+
+    if (cell) {
+        dragOver(cell);
     }
 });
 
