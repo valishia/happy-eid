@@ -30,7 +30,7 @@ canvas {
     top: 0;
     left: 0;
     pointer-events: none; /* 🔥 biar gak block touch */
-    z-index: 3; /* 🔥 di atas grid */
+    z-index: 10; /* 🔥 di atas grid */
 }
 
 /* ===== CELL ===== */
