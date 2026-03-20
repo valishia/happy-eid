@@ -180,6 +180,9 @@ canvas {
     h1 { font-size: 18px; }
 }
 </style>
+<audio id="bgm" loop>
+    <source src="musicc.mp3" type="audio/mpeg">
+</audio>
 </head>
 <body>
 
@@ -528,6 +531,18 @@ placeWords();
 fillRandom();
 renderGrid();
 window.addEventListener('resize', () => { syncCanvas(); ctx.clearRect(0,0,canvas.width,canvas.height); });
+
+// Play BGM on first user interaction (browser policy requires this)
+const bgm = document.getElementById('bgm');
+bgm.volume = 0.5;
+
+function startBGM() {
+    bgm.play().catch(() => {});
+    document.removeEventListener('pointerdown', startBGM);
+    document.removeEventListener('touchstart', startBGM);
+}
+document.addEventListener('pointerdown', startBGM);
+document.addEventListener('touchstart', startBGM);
 </script>
 </body>
 </html>
