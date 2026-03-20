@@ -2,9 +2,184 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Word Search Puzzle</title>
-<link rel="stylesheet" href="style.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: 'Nunito', sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    background: #fdf0f5;
+    background-image:
+        radial-gradient(circle at 20% 20%, #ffe0ef 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, #d4f5e9 0%, transparent 50%);
+    padding: 20px;
+    overscroll-behavior: none;
+}
+
+/* ===== TITLE ===== */
+h1 {
+    font-family: 'Fredoka One', cursive;
+    font-size: 28px;
+    color: #e63889;
+    text-align: center;
+    margin-bottom: 18px;
+    letter-spacing: 1px;
+}
+
+/* ===== WRAPPER ===== */
+.grid-wrapper {
+    position: relative;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+/* ===== GRID ===== */
+.grid {
+    display: grid;
+    grid-template-columns: repeat(8, 42px);
+    gap: 6px;
+    position: relative;
+    z-index: 1;
+    touch-action: none;
+}
+
+/* ===== CANVAS ===== */
+canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    z-index: 10;
+}
+
+/* ===== CELL ===== */
+.cell {
+    width: 42px;
+    height: 42px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #ffffff;
+    border-radius: 10px;
+    border: 2px solid #ff3f8e;
+    cursor: pointer;
+    font-family: 'Fredoka One', cursive;
+    font-size: 16px;
+    color: #2f5d50;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+    transition: background 0.15s;
+}
+
+.cell:hover { background: #ffe0ef; }
+
+.cell.selected {
+    background: #ffc0db;
+    color: #c0006a;
+}
+
+.cell.found {
+    background: #ff3f8e;
+    color: white;
+    border-color: #c0006a;
+}
+
+/* ===== WORD LIST ===== */
+.word-list {
+    margin-top: 18px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.label {
+    color: #888;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+.chips {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.chip {
+    padding: 6px 16px;
+    border-radius: 999px;
+    border: 2px solid #ff8c42;
+    color: #ff8c42;
+    font-weight: 700;
+    font-size: 14px;
+    transition: all 0.2s;
+}
+
+.chip.found-chip {
+    background: #ff8c42;
+    color: white;
+    text-decoration: line-through;
+    opacity: 0.7;
+}
+
+/* ===== LETTER PAGE ===== */
+.letter-page {
+    text-align: center;
+    max-width: 420px;
+    background: white;
+    padding: 36px 30px;
+    border-radius: 24px;
+    border: 2px solid #ff8c42;
+    box-shadow: 0 8px 32px rgba(255, 140, 66, 0.15);
+    animation: fadeIn 0.6s ease;
+}
+
+.letter-page h2 {
+    font-family: 'Fredoka One', cursive;
+    font-size: 26px;
+    color: #e63889;
+    margin-bottom: 20px;
+}
+
+#typing {
+    white-space: pre-line;
+    line-height: 1.8;
+    color: #444;
+    font-size: 15px;
+    text-align: left;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+    .grid { grid-template-columns: repeat(8, 34px); gap: 5px; }
+    .cell { width: 34px; height: 34px; font-size: 13px; }
+    h1 { font-size: 22px; }
+}
+
+@media (max-width: 480px) {
+    .grid { grid-template-columns: repeat(8, 28px); gap: 4px; }
+    .cell { width: 28px; height: 28px; font-size: 11px; }
+    h1 { font-size: 18px; }
+}
+</style>
 </head>
 <body>
 
@@ -18,10 +193,10 @@
 
     <div class="word-list">
         <span class="label">Temukan kata:</span>
-        <div class="chips">
-            <span class="chip">EID</span>
-            <span class="chip">MAAF</span>
-            <span class="chip">FITRI</span>
+        <div class="chips" id="chips">
+            <span class="chip" data-word="EID">EID</span>
+            <span class="chip" data-word="MAAF">MAAF</span>
+            <span class="chip" data-word="FITRI">FITRI</span>
         </div>
     </div>
 </div>
@@ -33,6 +208,326 @@
     </div>
 </div>
 
-<script src="script.js"></script>
+<script>
+const SIZE    = 8;
+const WORDS   = ['EID', 'MAAF', 'FITRI'];
+const DIRS    = [[0,1],[1,0],[0,-1],[-1,0],[1,1],[-1,-1],[1,-1],[-1,1]];
+const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+let gridData    = Array.from({length: SIZE}, () => Array(SIZE).fill(''));
+let foundWords  = new Set();
+
+let isDragging    = false;
+let startCell     = null;
+let direction     = null;
+let selectedCells = [];
+let pointerPos    = {x: 0, y: 0};
+
+const gridEl = document.getElementById('grid');
+const canvas = document.getElementById('lineCanvas');
+const ctx    = canvas.getContext('2d');
+
+/* ============================================================
+   WORD PLACEMENT
+============================================================ */
+function placeWords() {
+    WORDS.forEach(word => {
+        let placed = false, tries = 0;
+        while (!placed && tries++ < 500) {
+            const dir = DIRS[Math.floor(Math.random() * DIRS.length)];
+            const row = Math.floor(Math.random() * SIZE);
+            const col = Math.floor(Math.random() * SIZE);
+            let ok = true;
+            for (let i = 0; i < word.length; i++) {
+                const r = row + dir[0] * i, c = col + dir[1] * i;
+                if (r < 0 || c < 0 || r >= SIZE || c >= SIZE) { ok = false; break; }
+                if (gridData[r][c] !== '' && gridData[r][c] !== word[i]) { ok = false; break; }
+            }
+            if (ok) {
+                for (let i = 0; i < word.length; i++)
+                    gridData[row + dir[0] * i][col + dir[1] * i] = word[i];
+                placed = true;
+            }
+        }
+    });
+}
+
+function fillRandom() {
+    for (let r = 0; r < SIZE; r++)
+        for (let c = 0; c < SIZE; c++)
+            if (gridData[r][c] === '')
+                gridData[r][c] = LETTERS[Math.floor(Math.random() * LETTERS.length)];
+}
+
+/* ============================================================
+   RENDER
+============================================================ */
+function renderGrid() {
+    gridEl.innerHTML = '';
+    gridData.forEach((row, r) => {
+        row.forEach((letter, c) => {
+            const div = document.createElement('div');
+            div.className = 'cell';
+            div.textContent = letter;
+            div.dataset.row = r;
+            div.dataset.col = c;
+            gridEl.appendChild(div);
+        });
+    });
+    syncCanvas();
+}
+
+function syncCanvas() {
+    const rect = gridEl.getBoundingClientRect();
+    canvas.width  = rect.width;
+    canvas.height = rect.height;
+    canvas.style.width  = rect.width  + 'px';
+    canvas.style.height = rect.height + 'px';
+}
+
+/* ============================================================
+   CELL METRICS — reads real DOM size, includes gap
+============================================================ */
+function getCellStep() {
+    const firstCell = gridEl.querySelector('.cell');
+    if (!firstCell) return 48;
+    const gridRect = gridEl.getBoundingClientRect();
+    const cRect    = firstCell.getBoundingClientRect();
+    // step = cellSize + gap = total / SIZE
+    return gridRect.width / SIZE;
+}
+
+/* ============================================================
+   HIT TEST  clientX/Y → {row, col}
+============================================================ */
+function clientToCell(clientX, clientY) {
+    const rect = gridEl.getBoundingClientRect();
+    const step = getCellStep();
+    const col  = Math.floor((clientX - rect.left) / step);
+    const row  = Math.floor((clientY - rect.top)  / step);
+    if (col < 0 || row < 0 || col >= SIZE || row >= SIZE) return null;
+    return {row, col};
+}
+
+/* ============================================================
+   PROJECT onto locked direction
+============================================================ */
+function projectToDir(r1, c1, rawR, rawC, dir) {
+    const [dr, dc] = dir;
+    if (dr === 0) return {row: r1,                   col: clamp(rawC, 0, SIZE-1)};
+    if (dc === 0) return {row: clamp(rawR, 0, SIZE-1), col: c1};
+    const t = Math.max(0, Math.round((rawR - r1) * dr + (rawC - c1) * dc));
+    return {row: clamp(r1 + dr * t, 0, SIZE-1), col: clamp(c1 + dc * t, 0, SIZE-1)};
+}
+
+function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+/* ============================================================
+   UPDATE SELECTION
+============================================================ */
+function updateSelection(clientX, clientY) {
+    const hit = clientToCell(clientX, clientY);
+    if (!hit || !startCell) return;
+
+    const r1 = +startCell.dataset.row;
+    const c1 = +startCell.dataset.col;
+    const {row: rawR, col: rawC} = hit;
+
+    if (!direction) {
+        const dr = rawR - r1, dc = rawC - c1;
+        if (dr === 0 && dc === 0) { applySelection([startCell]); return; }
+        direction = [Math.sign(dr), Math.sign(dc)];
+    }
+
+    const {row: endR, col: endC} = projectToDir(r1, c1, rawR, rawC, direction);
+    const steps = Math.max(Math.abs(endR - r1), Math.abs(endC - c1));
+    const cells = [];
+    for (let i = 0; i <= steps; i++) {
+        const el = gridEl.querySelector(
+            `[data-row='${r1 + direction[0]*i}'][data-col='${c1 + direction[1]*i}']`
+        );
+        if (el) cells.push(el);
+    }
+    applySelection(cells);
+}
+
+function applySelection(cells) {
+    selectedCells.forEach(c => { if (!c.classList.contains('found')) c.classList.remove('selected'); });
+    selectedCells = cells;
+    cells.forEach(c => { if (!c.classList.contains('found')) c.classList.add('selected'); });
+}
+
+function clearSelection() {
+    selectedCells.forEach(c => { if (!c.classList.contains('found')) c.classList.remove('selected'); });
+    selectedCells = [];
+    direction = null;
+}
+
+/* ============================================================
+   DRAW LINE
+============================================================ */
+function drawDragLine() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (!startCell) return;
+    const gridRect = gridEl.getBoundingClientRect();
+    const sRect    = startCell.getBoundingClientRect();
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255, 140, 66, 0.55)';
+    ctx.lineWidth   = 10;
+    ctx.lineCap     = 'round';
+    ctx.beginPath();
+    ctx.moveTo(sRect.left - gridRect.left + sRect.width/2,
+               sRect.top  - gridRect.top  + sRect.height/2);
+    ctx.lineTo(pointerPos.x - gridRect.left, pointerPos.y - gridRect.top);
+    ctx.stroke();
+    ctx.restore();
+}
+
+/* ============================================================
+   UNIFIED INPUT — handles both Pointer API and Touch fallback
+   Mobile Safari sometimes fires touch events instead of pointer
+============================================================ */
+function onDragStart(clientX, clientY, target, pointerId) {
+    if (!target.classList.contains('cell')) return;
+    isDragging    = true;
+    startCell     = target;
+    direction     = null;
+    selectedCells = [];
+    pointerPos    = {x: clientX, y: clientY};
+    applySelection([startCell]);
+    if (pointerId !== undefined) {
+        try { gridEl.setPointerCapture(pointerId); } catch(e) {}
+    }
+}
+
+function onDragMove(clientX, clientY) {
+    if (!isDragging) return;
+    pointerPos = {x: clientX, y: clientY};
+    updateSelection(clientX, clientY);
+    drawDragLine();
+}
+
+function onDragEnd(pointerId) {
+    if (!isDragging) return;
+    isDragging = false;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    checkWord();
+    if (pointerId !== undefined) {
+        try { gridEl.releasePointerCapture(pointerId); } catch(e) {}
+    }
+}
+
+function onDragCancel() {
+    isDragging = false;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    clearSelection();
+}
+
+// ── Pointer Events (desktop + modern mobile) ──
+gridEl.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    onDragStart(e.clientX, e.clientY, e.target, e.pointerId);
+}, {passive: false});
+
+gridEl.addEventListener('pointermove', e => {
+    e.preventDefault();
+    onDragMove(e.clientX, e.clientY);
+}, {passive: false});
+
+gridEl.addEventListener('pointerup',     e => onDragEnd(e.pointerId));
+gridEl.addEventListener('pointercancel', () => onDragCancel());
+
+// ── Touch Events fallback (iOS Safari edge cases) ──
+// Only bind if pointer events aren't firing properly
+let pointerFired = false;
+gridEl.addEventListener('pointerdown', () => { pointerFired = true; }, {once: true});
+
+gridEl.addEventListener('touchstart', e => {
+    if (pointerFired) return;          // pointer API working, skip
+    e.preventDefault();
+    const t = e.changedTouches[0];
+    const el = document.elementFromPoint(t.clientX, t.clientY);
+    onDragStart(t.clientX, t.clientY, el, undefined);
+}, {passive: false});
+
+gridEl.addEventListener('touchmove', e => {
+    if (pointerFired) return;
+    e.preventDefault();
+    const t = e.changedTouches[0];
+    onDragMove(t.clientX, t.clientY);
+}, {passive: false});
+
+gridEl.addEventListener('touchend', e => {
+    if (pointerFired) return;
+    onDragEnd(undefined);
+}, {passive: false});
+
+gridEl.addEventListener('touchcancel', () => {
+    if (pointerFired) return;
+    onDragCancel();
+});
+
+// Prevent page scroll while dragging anywhere on document
+document.addEventListener('touchmove', e => {
+    if (isDragging) e.preventDefault();
+}, {passive: false});
+
+/* ============================================================
+   CHECK WORD
+============================================================ */
+function checkWord() {
+    const word    = selectedCells.map(c => c.textContent).join('');
+    const rev     = word.split('').reverse().join('');
+    const matched = WORDS.find(w => w === word || w === rev);
+
+    if (matched && !foundWords.has(matched)) {
+        foundWords.add(matched);
+        selectedCells.forEach(c => { c.classList.remove('selected'); c.classList.add('found'); });
+        const chip = document.querySelector(`.chip[data-word="${matched}"]`);
+        if (chip) chip.classList.add('found-chip');
+        if (foundWords.size === WORDS.length) setTimeout(showLetterPage, 600);
+    } else {
+        clearSelection();
+    }
+    selectedCells = [];
+    direction = null;
+}
+
+/* ============================================================
+   LETTER PAGE
+============================================================ */
+function showLetterPage() {
+    document.getElementById('game').style.display   = 'none';
+    document.getElementById('letter').style.display = 'block';
+    startTyping();
+}
+
+const MESSAGE = `Selamat Hari Raya Idul Fitri 🌙✨
+
+Mohon maaf lahir dan batin yaa 🤍
+Kalau selama ini ada kata atau sikap yang kurang berkenan, aku minta maaf sebesar-besarnya 🥺
+
+Terima kasih juga untuk semua kenangan, tawa, dan kebersamaan yang udah kita lewatin bareng 💛
+
+Semoga pertemanan kita tetap hangat, penuh cerita, dan terus berlanjut ke depannya 🤍✨
+
+Sincerely, Gya.`;
+
+function startTyping() {
+    let i = 0;
+    const el = document.getElementById('typing');
+    (function type() {
+        if (i < MESSAGE.length) { el.textContent += MESSAGE.charAt(i++); setTimeout(type, 38); }
+    })();
+}
+
+/* ============================================================
+   INIT
+============================================================ */
+placeWords();
+fillRandom();
+renderGrid();
+window.addEventListener('resize', () => { syncCanvas(); ctx.clearRect(0,0,canvas.width,canvas.height); });
+</script>
 </body>
 </html>
